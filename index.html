@@ -771,9 +771,12 @@ function renderDetail() {
     + anomHtml + clHtml
     +(r.conclusion?'<div class="stitle">Conclusion</div><div class="card"><div style="padding:12px 14px;font-size:14px;line-height:1.6;">'+r.conclusion+'</div></div>':'')
     +(r.remarques?'<div class="stitle">Remarques</div><div class="card"><div style="padding:12px 14px;font-size:14px;line-height:1.6;">'+r.remarques+'</div></div>':'')
-    +'<div style="display:flex;gap:10px;margin-top:6px;margin-bottom:14px;">'
-    +'<button class="btn btn-navy btn-sm" style="flex:1;" onclick="exportPDF(\''+r.id+'\')">📄 Exporter PDF</button>'
-    +'<button class="btn btn-red btn-sm" style="flex:1;" onclick="deleteReport(\''+r.id+'\')">🗑️ Supprimer</button>'
+    +'<div style="display:flex;gap:8px;margin-top:6px;margin-bottom:6px;">'
+    +'<button class="btn btn-navy btn-sm" style="flex:1;" onclick="exportPDF(\''+r.id+'\')">📧 Envoyer par email</button>'
+    +'<button class="btn btn-ghost btn-sm" style="flex:1;" onclick="editReport(\''+r.id+'\')">✏️ Modifier</button>'
+    +'</div>'
+    +'<div style="margin-bottom:14px;">'
+    +'<button class="btn btn-red btn-sm" style="width:100%;" onclick="deleteReport(\''+r.id+'\')">🗑️ Supprimer ce rapport</button>'
     +'</div>';
 }
 
@@ -783,92 +786,89 @@ function renderDetail() {
 function exportPDF(id) {
   var r = reports.find(function(x){return x.id===id;});
   if (!r) return;
+
   var cl = r.cl||[];
   var anom = cl.filter(function(c){return c.s==='NON';});
   var ok   = cl.filter(function(c){return c.s==='OUI';});
   var dateStr = r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—';
 
-  var clRows = cl.map(function(c,i){
-    var badge = c.s==='OUI'
-      ? '<span style="background:#d1fae5;color:#065f46;font-weight:800;font-size:9px;padding:2px 7px;border-radius:4px;">OUI</span>'
-      : c.s==='NON'
-      ? '<span style="background:#fee2e2;color:#991b1b;font-weight:800;font-size:9px;padding:2px 7px;border-radius:4px;">NON</span>'
-      : '<span style="background:#f3f4f6;color:#6b7280;font-size:9px;padding:2px 7px;border-radius:4px;">N/R</span>';
-    var bg = c.s==='NON' ? 'background:#fff8f8;' : '';
-    return '<tr style="'+bg+'border-bottom:1px solid #e8eef4;">'
-      +'<td style="width:22px;color:#aaa;font-size:10px;text-align:center;padding:5px 3px;">'+(i+1)+'</td>'
-      +'<td style="padding:5px 8px;font-size:11px;">'+c.l+'</td>'
-      +'<td style="width:48px;text-align:center;padding:5px;">'+badge+'</td>'
-      +'<td style="padding:5px 8px;font-size:10px;color:#c05c00;font-style:italic;">'+(c.r||'')+'</td>'
-      +'</tr>';
-  }).join('');
+  // Build email body
+  var sep = '────────────────────────────';
+  var body = 'BON D'INTERVENTION PHE — CLAUGER\n';
+  body += sep + '\n\n';
+  body += '📋 INFORMATIONS\n';
+  body += 'Client       : ' + (r.client||'—') + '\n';
+  body += 'Technicien   : ' + (r.tech||'—') + '\n';
+  body += 'Date         : ' + dateStr + '\n';
+  body += 'Agence       : ' + (r.agence||'—') + '\n';
+  body += 'Prestation   : ' + (r.type||'—') + '\n';
+  body += 'Application  : ' + (r.app||'—') + '\n';
+  body += 'Équipement   : ' + ([r.marque,r.modele].filter(Boolean).join(' / ')||'—') + '\n';
+  body += 'N° de série  : ' + (r.serie||'—') + '\n';
+  if (r.cote) body += 'Cote serrage : ' + r.cote + ' mm\n';
+  body += '\n';
 
-  var anomBlock = anom.length > 0
-    ? '<div style="border:1.5px solid #fca5a5;background:#fff5f5;border-radius:6px;padding:10px 14px;margin-bottom:12px;">'
-      +'<div style="color:#b91c1c;font-weight:800;font-size:12px;margin-bottom:6px;">⚠️ '+anom.length+' Anomalie(s)</div>'
-      +anom.map(function(a){return '<div style="font-size:11px;padding:2px 0;">• '+a.l+(a.r?' — <em style="color:#c05c00;">'+a.r+'</em>':'')+'</div>';}).join('')
-      +'</div>'
-    : '';
-
-  var html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8">'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;padding:18px;}</style>'
-    +'<title>BI Clauger - '+r.client+' - '+r.date+'</title></head><body>'
-    +'<div style="background:#003566;color:#fff;padding:14px 18px;border-radius:8px 8px 0 0;margin-bottom:0;">'
-    +'<div style="display:flex;justify-content:space-between;align-items:center;">'
-    +'<div><div style="font-size:17px;font-weight:800;letter-spacing:.02em;">BON D\'INTERVENTION PHE</div>'
-    +'<div style="font-size:10px;opacity:.7;margin-top:2px;">CLAUGER'+(r.agence?' · '+r.agence:'')+' · '+dateStr+'</div></div>'
-    +'<div style="font-size:10px;opacity:.7;text-align:right;">Réf : '+r.id+'</div></div></div>'
-    +'<table style="width:100%;border-collapse:collapse;border:1px solid #003566;border-top:none;margin-bottom:12px;">'
-    +'<tr>'
-    +'<td style="padding:8px 12px;border-right:1px solid #c8d8e8;border-bottom:1px solid #c8d8e8;width:50%;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Client</div><div style="font-size:12px;font-weight:700;">'+(r.client||'—')+'</div></td>'
-    +'<td style="padding:8px 12px;border-bottom:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Date</div><div style="font-size:12px;font-weight:700;">'+dateStr+'</div></td>'
-    +'</tr><tr>'
-    +'<td style="padding:8px 12px;border-right:1px solid #c8d8e8;border-bottom:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Technicien</div><div style="font-size:12px;font-weight:700;">'+(r.tech||'—')+'</div></td>'
-    +'<td style="padding:8px 12px;border-bottom:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Agence</div><div style="font-size:12px;font-weight:700;">'+(r.agence||'—')+'</div></td>'
-    +'</tr><tr>'
-    +'<td style="padding:8px 12px;border-right:1px solid #c8d8e8;border-bottom:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Prestation</div><div style="font-size:12px;font-weight:700;">'+(r.type||'—')+'</div></td>'
-    +'<td style="padding:8px 12px;border-bottom:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Application</div><div style="font-size:12px;font-weight:700;">'+(r.app||'—')+'</div></td>'
-    +'</tr><tr>'
-    +'<td style="padding:8px 12px;border-right:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Équipement</div><div style="font-size:12px;font-weight:700;">'+([r.marque,r.modele].filter(Boolean).join(' / ')||'—')+'</div></td>'
-    +'<td style="padding:8px 12px;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">N° de série</div><div style="font-size:12px;font-weight:700;">'+(r.serie||'—')+'</div></td>'
-    +'</tr>'
-    +(r.cote?'<tr><td colspan="2" style="padding:8px 12px;border-top:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;margin-bottom:2px;">Cote de serrage</div><div style="font-size:12px;font-weight:700;">'+r.cote+' mm</div></td></tr>':'')
-    +'</table>'
-    +(cl.length>0
-      ? '<div style="background:#003566;color:#fff;padding:5px 12px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-radius:4px 4px 0 0;">Checklist — '+ok.length+' / '+cl.length+' OK</div>'
-        +'<table style="width:100%;border-collapse:collapse;border:1px solid #c8d8e8;border-top:none;margin-bottom:12px;">'+clRows+'</table>'
-      : '')
-    + anomBlock
-    +'<div style="background:#003566;color:#fff;padding:5px 12px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-radius:4px 4px 0 0;">Conclusion</div>'
-    +'<div style="border:1px solid #c8d8e8;border-top:none;padding:10px 14px;font-size:11px;line-height:1.6;min-height:46px;margin-bottom:12px;white-space:pre-wrap;">'+(r.conclusion||'—')+'</div>'
-    +'<div style="background:#003566;color:#fff;padding:5px 12px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;border-radius:4px 4px 0 0;">Remarques</div>'
-    +'<div style="border:1px solid #c8d8e8;border-top:none;padding:10px 14px;font-size:11px;line-height:1.6;min-height:38px;margin-bottom:12px;white-space:pre-wrap;">'+(r.remarques||'—')+'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;border:1px solid #c8d8e8;margin-bottom:14px;">'
-    +'<div style="padding:10px 12px;border-right:1px solid #c8d8e8;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;">Technicien : '+(r.tech||'')+'</div><div style="border-bottom:1px solid #c8d8e8;height:42px;margin-top:8px;"></div></div>'
-    +'<div style="padding:10px 12px;"><div style="font-size:9px;font-weight:700;text-transform:uppercase;color:#555;">Client : '+(r.client||'')+'</div><div style="border-bottom:1px solid #c8d8e8;height:42px;margin-top:8px;"></div></div>'
-    +'</div>'
-    +'<div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid #e0e0e0;font-size:9px;color:#999;">'
-    +'<span>Clauger — www.clauger.com</span><span>Généré le '+new Date().toLocaleDateString('fr-FR')+' — Réf. '+r.id+'</span></div>'
-    +'</body></html>';
-
-  var win = window.open('', '_blank');
-  if (win) {
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-    setTimeout(function(){ win.focus(); win.print(); }, 700);
-  } else {
-    var blob = new Blob([html], {type:'text/html;charset=utf-8'});
-    var url  = URL.createObjectURL(blob);
-    var a    = document.createElement('a');
-    a.href   = url;
-    a.download = 'BI_Clauger_'+(r.client||'rapport').replace(/[^a-z0-9]/gi,'_')+'_'+(r.date||'')+'.html';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast('📄 Ouvrez le fichier pour imprimer en PDF');
+  if (cl.length > 0) {
+    body += sep + '\n';
+    body += '✅ CHECKLIST (' + ok.length + '/' + cl.length + ' OK)\n';
+    body += sep + '\n';
+    cl.forEach(function(c) {
+      var ico = c.s==='OUI' ? '✅' : c.s==='NON' ? '❌' : '⬜';
+      body += ico + ' ' + c.l + (c.r ? ' → ' + c.r : '') + '\n';
+    });
+    body += '\n';
   }
+
+  if (anom.length > 0) {
+    body += sep + '\n';
+    body += '⚠️ ANOMALIES DÉTECTÉES (' + anom.length + ')\n';
+    body += sep + '\n';
+    anom.forEach(function(a) {
+      body += '• ' + a.l + (a.r ? ' : ' + a.r : '') + '\n';
+    });
+    body += '\n';
+  }
+
+  body += sep + '\n';
+  body += '📝 CONCLUSION\n';
+  body += sep + '\n';
+  body += (r.conclusion||'—') + '\n\n';
+
+  body += sep + '\n';
+  body += '💬 REMARQUES\n';
+  body += sep + '\n';
+  body += (r.remarques||'—') + '\n\n';
+
+  body += sep + '\n';
+  body += 'Rapport généré le ' + new Date().toLocaleDateString('fr-FR') + ' — Réf. ' + r.id + '\n';
+  body += 'Clauger — www.clauger.com\n';
+
+  var subject = 'Bon d'intervention PHE — ' + (r.client||'') + ' — ' + dateStr;
+
+  // Open mail app
+  var mailto = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
+}
+
+
+// ===========================================================
+// EDIT REPORT
+// ===========================================================
+function editReport(id) {
+  var r = reports.find(function(x){return x.id===id;});
+  if (!r) return;
+  draft = {
+    id:r.id, tid:r.tid, client:r.client||'', tech:r.tech||'', agence:r.agence||'',
+    date:r.date||'', marque:r.marque||'', modele:r.modele||'', serie:r.serie||'',
+    cote:r.cote||'', app:r.app||'', type:r.type||'',
+    cl: r.cl ? r.cl.map(function(c){return {l:c.l,s:c.s,r:c.r};}) : [],
+    photos:r.photos||[], conclusion:r.conclusion||'', remarques:r.remarques||''
+  };
+  save();
+  var choice = confirm('Que voulez-vous modifier ?\n\nOK = Informations & équipement\nAnnuler = Checklist & conclusion');
+  if (choice) { fillInfoForm(); showScreen('s-new-info'); }
+  else { renderChecklist(); showScreen('s-checklist'); }
+  showToast('✏️ Mode modification');
 }
 
 // ===========================================================
