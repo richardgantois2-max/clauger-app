@@ -197,9 +197,47 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ro
           <div class="field"><label>Marque</label><input type="text" id="f-marque" placeholder="Alfa Laval, APV, Tranter..."></div>
           <div class="field"><label>Modèle / Référence</label><input type="text" id="f-modele" placeholder="M15, T20..."></div>
           <div class="field"><label>N° de série</label><input type="text" id="f-serie" placeholder="Numéro de série"></div>
-          <div class="field" style="margin-bottom:0"><label>Cote de serrage (mm)</label><input type="number" id="f-cote" placeholder="Ex: 247"></div>
+          <div class="field"><label>Cote de serrage (mm)</label><input type="number" id="f-cote" placeholder="Ex: 247"></div>
+          <div class="field"><label>Nombre de plaques / cassettes</label><input type="number" id="f-nplaques" placeholder="Ex: 48"></div>
         </div>
       </div>
+
+      <div class="stitle">Bâtis</div>
+      <div class="card">
+        <div style="padding:14px;">
+          <div class="field"><label>Épaisseur bâti fixe (mm)</label><input type="number" id="f-bati-fixe" placeholder="Ex: 30"></div>
+          <div class="field"><label>Épaisseur bâti mobile (mm)</label><input type="number" id="f-bati-mobile" placeholder="Ex: 25"></div>
+          <div class="field"><label>Épaisseur bâti(s) intermédiaire(s) (mm)</label><input type="text" id="f-bati-inter" placeholder="Ex: 20 ou 20/20 si plusieurs"></div>
+          <div class="field"><label>Nombre de tirants</label><input type="number" id="f-ntirants" placeholder="Ex: 4"></div>
+          <div class="field" style="margin-bottom:0"><label>Taille des écrous de serrage</label><input type="text" id="f-ecrous" placeholder="Ex: M16, M20..."></div>
+        </div>
+      </div>
+
+      <div class="stitle" id="raccords-title" style="display:none">Raccords (Test d'intégrité)</div>
+      <div class="card" id="raccords-card" style="display:none">
+        <div style="padding:14px;">
+          <div class="field"><label>Type de raccords</label>
+            <select id="f-raccord-type">
+              <option value="">-- Sélectionner --</option>
+              <option value="SMS">SMS</option>
+              <option value="DIN">DIN</option>
+              <option value="CLAMP">Clamp / Tri-clamp</option>
+              <option value="FILETE">Fileté</option>
+              <option value="BRIDE">Bride</option>
+              <option value="AUTRE">Autre</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:0"><label>Taille des raccords</label><input type="text" id="f-raccord-taille" placeholder="Ex: DN50, 2 pouces..."></div>
+        </div>
+      </div>
+
+      <div class="stitle" id="sections-title" style="display:none">Process - Sections</div>
+      <div class="card" id="sections-card" style="display:none">
+        <div style="padding:14px;">
+          <div class="field" style="margin-bottom:0"><label>Nombre de plaques par section</label><input type="text" id="f-plaques-section" placeholder="Ex: 12/12/12 ou 24"></div>
+        </div>
+      </div>
+
       <button class="btn btn-navy" onclick="goChecklist()">Continuer → Checklist</button>
     </div>
 
@@ -535,8 +573,24 @@ function fillInfoForm() {
   document.getElementById('f-date').value    = draft.date||new Date().toISOString().split('T')[0];
   document.getElementById('f-marque').value  = draft.marque||'';
   document.getElementById('f-modele').value  = draft.modele||'';
-  document.getElementById('f-serie').value   = draft.serie||'';
-  document.getElementById('f-cote').value    = draft.cote||'';
+  document.getElementById('f-serie').value         = draft.serie||'';
+  document.getElementById('f-cote').value           = draft.cote||'';
+  document.getElementById('f-nplaques').value       = draft.nplaques||'';
+  document.getElementById('f-bati-fixe').value      = draft.batiFixe||'';
+  document.getElementById('f-bati-mobile').value    = draft.batiMobile||'';
+  document.getElementById('f-bati-inter').value     = draft.batiInter||'';
+  document.getElementById('f-ntirants').value       = draft.ntirants||'';
+  document.getElementById('f-ecrous').value         = draft.ecrous||'';
+  document.getElementById('f-raccord-type').value   = draft.raccordType||'';
+  document.getElementById('f-raccord-taille').value = draft.raccordTaille||'';
+  document.getElementById('f-plaques-section').value= draft.plaquesSection||'';
+  // Show/hide raccords and sections based on template
+  var isIntegrite = draft.tid && (draft.tid.indexOf('int') >= 0 || draft.tid.indexOf('campagne') >= 0);
+  var isProcess   = draft.app === 'PROCESS';
+  document.getElementById('raccords-title').style.display = isIntegrite ? 'block' : 'none';
+  document.getElementById('raccords-card').style.display  = isIntegrite ? 'block' : 'none';
+  document.getElementById('sections-title').style.display = isProcess ? 'block' : 'none';
+  document.getElementById('sections-card').style.display  = isProcess ? 'block' : 'none';
 }
 
 function goChecklist() {
@@ -550,8 +604,17 @@ function goChecklist() {
   draft.date    = date;
   draft.marque  = document.getElementById('f-marque').value.trim();
   draft.modele  = document.getElementById('f-modele').value.trim();
-  draft.serie   = document.getElementById('f-serie').value.trim();
-  draft.cote    = document.getElementById('f-cote').value.trim();
+  draft.serie          = document.getElementById('f-serie').value.trim();
+  draft.cote           = document.getElementById('f-cote').value.trim();
+  draft.nplaques       = document.getElementById('f-nplaques').value.trim();
+  draft.batiFixe       = document.getElementById('f-bati-fixe').value.trim();
+  draft.batiMobile     = document.getElementById('f-bati-mobile').value.trim();
+  draft.batiInter      = document.getElementById('f-bati-inter').value.trim();
+  draft.ntirants       = document.getElementById('f-ntirants').value.trim();
+  draft.ecrous         = document.getElementById('f-ecrous').value.trim();
+  draft.raccordType    = document.getElementById('f-raccord-type').value.trim();
+  draft.raccordTaille  = document.getElementById('f-raccord-taille').value.trim();
+  draft.plaquesSection = document.getElementById('f-plaques-section').value.trim();
   save();
   renderChecklist();
   showScreen('s-checklist');
@@ -733,6 +796,10 @@ function saveReport() {
   var report = {
     id:draft.id, tid:draft.tid, app:draft.app, type:draft.type,
     sig_sigTech:draft.sig_sigTech||null, sig_sigClient:draft.sig_sigClient||null,
+    nplaques:draft.nplaques||'', batiFixe:draft.batiFixe||'', batiMobile:draft.batiMobile||'',
+    batiInter:draft.batiInter||'', ntirants:draft.ntirants||'', ecrous:draft.ecrous||'',
+    raccordType:draft.raccordType||'', raccordTaille:draft.raccordTaille||'',
+    plaquesSection:draft.plaquesSection||'',
     client:draft.client, tech:draft.tech, agence:draft.agence, date:draft.date,
     marque:draft.marque, modele:draft.modele, serie:draft.serie, cote:draft.cote,
     cl:draft.cl, photos:draft.photos||[], conclusion:draft.conclusion, remarques:draft.remarques,
@@ -792,6 +859,15 @@ function renderDetail() {
     +'<div class="sumrow"><span class="sk">Équipement</span><span class="sv">'+([r.marque,r.modele].filter(Boolean).join(' ')||'—')+'</span></div>'
     +'<div class="sumrow"><span class="sk">N° série</span><span class="sv">'+(r.serie||'—')+'</span></div>'
     +(r.cote?'<div class="sumrow"><span class="sk">Cote serrage</span><span class="sv">'+r.cote+' mm</span></div>':'')
+    +(r.nplaques?'<div class="sumrow"><span class="sk">Nb plaques/cassettes</span><span class="sv">'+r.nplaques+'</span></div>':'')
+    +(r.batiFixe?'<div class="sumrow"><span class="sk">Bati fixe</span><span class="sv">'+r.batiFixe+' mm</span></div>':'')
+    +(r.batiMobile?'<div class="sumrow"><span class="sk">Bati mobile</span><span class="sv">'+r.batiMobile+' mm</span></div>':'')
+    +(r.batiInter?'<div class="sumrow"><span class="sk">Bati inter.</span><span class="sv">'+r.batiInter+' mm</span></div>':'')
+    +(r.ntirants?'<div class="sumrow"><span class="sk">Nb tirants</span><span class="sv">'+r.ntirants+'</span></div>':'')
+    +(r.ecrous?'<div class="sumrow"><span class="sk">Ecrous serrage</span><span class="sv">'+r.ecrous+'</span></div>':'')
+    +(r.raccordType?'<div class="sumrow"><span class="sk">Type raccords</span><span class="sv">'+r.raccordType+'</span></div>':'')
+    +(r.raccordTaille?'<div class="sumrow"><span class="sk">Taille raccords</span><span class="sv">'+r.raccordTaille+'</span></div>':'')
+    +(r.plaquesSection?'<div class="sumrow"><span class="sk">Plaques/section</span><span class="sv">'+r.plaquesSection+'</span></div>':'')
     +'</div>'
     + anomHtml + clHtml
     +(r.sig_sigTech||r.sig_sigClient ? '<div class="stitle">Signatures</div>'+'<div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">'+(r.sig_sigTech ? '<div style="padding:12px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:#888;margin-bottom:6px;text-transform:uppercase;">Technicien</div><img src="'+r.sig_sigTech+'" style="width:100%;border-radius:6px;"></div>' : '<div style="padding:12px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:#888;">Technicien - non signé</div></div>')+(r.sig_sigClient ? '<div style="padding:12px;"><div style="font-size:10px;font-weight:700;color:#888;margin-bottom:6px;text-transform:uppercase;">Client</div><img src="'+r.sig_sigClient+'" style="width:100%;border-radius:6px;"></div>' : '<div style="padding:12px;"><div style="font-size:10px;font-weight:700;color:#888;">Client - non signé</div></div>')+'</div></div>' : '')+
@@ -830,7 +906,15 @@ function exportPDF(id) {
   body += 'Prestation   : ' + (r.type||'—') + '\n';
   body += 'Application  : ' + (r.app||'—') + '\n';
   body += 'Équipement   : ' + ([r.marque,r.modele].filter(Boolean).join(' / ')||'—') + '\n';
-  body += 'N° de série  : ' + (r.serie||'—') + '\n';
+  body += 'N de serie   : ' + (r.serie||'—') + '\n';
+  if (r.nplaques) body += 'Nb plaques   : ' + r.nplaques + '\n';
+  if (r.batiFixe) body += 'Bati fixe    : ' + r.batiFixe + ' mm\n';
+  if (r.batiMobile) body += 'Bati mobile  : ' + r.batiMobile + ' mm\n';
+  if (r.batiInter) body += 'Bati inter.  : ' + r.batiInter + ' mm\n';
+  if (r.ntirants) body += 'Nb tirants   : ' + r.ntirants + '\n';
+  if (r.ecrous) body += 'Ecrous       : ' + r.ecrous + '\n';
+  if (r.raccordType) body += 'Raccords     : ' + r.raccordType + ' - ' + (r.raccordTaille||'') + '\n';
+  if (r.plaquesSection) body += 'Plaques/sect : ' + r.plaquesSection + '\n';
   if (r.cote) body += 'Cote serrage : ' + r.cote + ' mm\n';
   body += '\n';
 
