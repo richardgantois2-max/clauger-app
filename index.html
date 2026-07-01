@@ -235,10 +235,32 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Ro
           <div class="field" style="margin-bottom:0"><label>Remarques particulières</label><textarea id="f-remarques" placeholder="Pièces à prévoir, infos pour l'agence..."></textarea></div>
         </div>
       </div>
-      <button class="btn btn-navy" onclick="showScreen('s-recap')">Voir le récapitulatif →</button>
+      <button class="btn btn-navy" onclick="saveConclusion()">Continuer → Signatures</button>
     </div>
 
     <!-- RECAP -->
+    <!-- SIGNATURE -->
+    <div class="screen" id="s-signature">
+      <div class="stitle">Signature du technicien</div>
+      <div class="card" style="padding:14px;">
+        <div style="font-size:13px;color:#888;margin-bottom:8px;">Signez dans le cadre ci-dessous</div>
+        <canvas id="sigTech" width="340" height="150" style="border:2px solid #dde3ea;border-radius:10px;background:#fff;touch-action:none;width:100%;"></canvas>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="clearSig('sigTech')">Effacer</button>
+        </div>
+      </div>
+      <div class="stitle">Signature du client</div>
+      <div class="card" style="padding:14px;">
+        <div style="font-size:13px;color:#888;margin-bottom:8px;">Signez dans le cadre ci-dessous</div>
+        <canvas id="sigClient" width="340" height="150" style="border:2px solid #dde3ea;border-radius:10px;background:#fff;touch-action:none;width:100%;"></canvas>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="clearSig('sigClient')">Effacer</button>
+        </div>
+      </div>
+      <button class="btn btn-navy" onclick="goToRecap()" style="margin-bottom:8px;">Voir le récapitulatif →</button>
+      <button class="btn btn-ghost" onclick="goToRecap()">Passer les signatures</button>
+    </div>
+
     <div class="screen" id="s-recap">
       <div id="recapContent"></div>
     </div>
@@ -331,13 +353,13 @@ function showScreen(id, addToStack) {
   document.getElementById('content').scrollTop = 0;
 
   // Show/hide back button
-  var inWizard = ['s-new-type','s-new-info','s-checklist','s-photos','s-conclusion','s-recap','s-detail'].indexOf(id) >= 0;
+  var inWizard = ['s-new-type','s-new-info','s-checklist','s-photos','s-conclusion','s-signature','s-recap','s-detail'].indexOf(id) >= 0;
   var backBtn = document.getElementById('backBtn');
   backBtn.style.display = inWizard ? 'flex' : 'none';
 
   // Show/hide bottomnav
   var bottomnav = document.getElementById('bottomnav');
-  var wizardScreens = ['s-new-type','s-new-info','s-checklist','s-photos','s-conclusion','s-recap'];
+  var wizardScreens = ['s-new-type','s-new-info','s-checklist','s-photos','s-conclusion','s-signature','s-recap'];
   bottomnav.style.display = wizardScreens.indexOf(id) >= 0 ? 'none' : 'flex';
 
   updateTopbar();
@@ -347,6 +369,7 @@ function showScreen(id, addToStack) {
   if (id === 's-recap') renderRecap();
   if (id === 's-detail') renderDetail();
   if (id === 's-conclusion') renderAnomalyPreview();
+  if (id === 's-signature') initSignatures();
   if (id === 's-reglages') {
     document.getElementById('cfg-tech').value = cfg.tech;
     document.getElementById('cfg-agence').value = cfg.agence;
@@ -375,11 +398,12 @@ function updateTopbar() {
     's-home': 'Clauger PHE <span class="t-sub">Bons d\'intervention</span>',
     's-rapports': 'Mes rapports <span class="t-sub">'+reports.length+' rapport(s)</span>',
     's-reglages': 'Réglages <span class="t-sub">Profil technicien</span>',
-    's-new-type': 'Nouveau rapport <span class="t-sub">Étape 1/5 — Type de prestation</span>',
-    's-new-info': 'Informations <span class="t-sub">Étape 2/5 — Client & équipement</span>',
+    's-new-type': 'Nouveau rapport <span class="t-sub">Étape 1/5 - Type de prestation</span>',
+    's-new-info': 'Informations <span class="t-sub">Étape 2/5 - Client & équipement</span>',
     's-checklist': 'Checklist <span class="t-sub">Étape 3/5</span>',
-    's-photos': 'Photos <span class="t-sub">Étape 4/5 — Optionnel</span>',
-    's-conclusion': 'Conclusion <span class="t-sub">Étape 5/5</span>',
+    's-photos': 'Photos <span class="t-sub">Étape 4/5 - Optionnel</span>',
+    's-conclusion': 'Conclusion <span class="t-sub">Étape 5/6</span>',
+    's-signature': 'Signatures <span class="t-sub">Étape 6/6</span>',
     's-recap': 'Récapitulatif <span class="t-sub">Prêt à enregistrer</span>',
     's-detail': 'Rapport <span class="t-sub">'+(detailId ? (reports.find(function(r){return r.id===detailId;})||{}).client||'' : '')+'</span>'
   };
@@ -708,6 +732,7 @@ function saveReport() {
   var anom = (draft.cl||[]).filter(function(c){return c.s==='NON';}).length;
   var report = {
     id:draft.id, tid:draft.tid, app:draft.app, type:draft.type,
+    sig_sigTech:draft.sig_sigTech||null, sig_sigClient:draft.sig_sigClient||null,
     client:draft.client, tech:draft.tech, agence:draft.agence, date:draft.date,
     marque:draft.marque, modele:draft.modele, serie:draft.serie, cote:draft.cote,
     cl:draft.cl, photos:draft.photos||[], conclusion:draft.conclusion, remarques:draft.remarques,
@@ -769,6 +794,7 @@ function renderDetail() {
     +(r.cote?'<div class="sumrow"><span class="sk">Cote serrage</span><span class="sv">'+r.cote+' mm</span></div>':'')
     +'</div>'
     + anomHtml + clHtml
+    +(r.sig_sigTech||r.sig_sigClient ? '<div class="stitle">Signatures</div>'+'<div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">'+(r.sig_sigTech ? '<div style="padding:12px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:#888;margin-bottom:6px;text-transform:uppercase;">Technicien</div><img src="'+r.sig_sigTech+'" style="width:100%;border-radius:6px;"></div>' : '<div style="padding:12px;border-right:1px solid var(--border);"><div style="font-size:10px;font-weight:700;color:#888;">Technicien - non signé</div></div>')+(r.sig_sigClient ? '<div style="padding:12px;"><div style="font-size:10px;font-weight:700;color:#888;margin-bottom:6px;text-transform:uppercase;">Client</div><img src="'+r.sig_sigClient+'" style="width:100%;border-radius:6px;"></div>' : '<div style="padding:12px;"><div style="font-size:10px;font-weight:700;color:#888;">Client - non signé</div></div>')+'</div></div>' : '')+
     +(r.conclusion?'<div class="stitle">Conclusion</div><div class="card"><div style="padding:12px 14px;font-size:14px;line-height:1.6;">'+r.conclusion+'</div></div>':'')
     +(r.remarques?'<div class="stitle">Remarques</div><div class="card"><div style="padding:12px 14px;font-size:14px;line-height:1.6;">'+r.remarques+'</div></div>':'')
     +'<div style="display:flex;gap:8px;margin-top:6px;margin-bottom:6px;">'
@@ -793,8 +819,8 @@ function exportPDF(id) {
   var dateStr = r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—';
 
   // Build email body
-  var sep = '────────────────────────────';
-  var body = "BON D'INTERVENTION PHE — CLAUGER\n";
+  var sep = '--------------------------------';
+  var body = 'BON INTERVENTION PHE - CLAUGER\n';
   body += sep + '\n\n';
   body += '📋 INFORMATIONS\n';
   body += 'Client       : ' + (r.client||'—') + '\n';
@@ -840,10 +866,10 @@ function exportPDF(id) {
   body += (r.remarques||'—') + '\n\n';
 
   body += sep + '\n';
-  body += 'Rapport généré le ' + new Date().toLocaleDateString('fr-FR') + ' — Réf. ' + r.id + '\n';
-  body += 'Clauger — www.clauger.com\n';
+  body += 'Rapport généré le ' + new Date().toLocaleDateString('fr-FR') + ' - Réf. ' + r.id + '\n';
+  body += 'Clauger - www.clauger.com\n';
 
-  var subject = "Bon d'intervention PHE — " + (r.client||'') + ' — ' + dateStr;
+  var subject = 'Bon intervention PHE - ' + (r.client||'') + ' - ' + dateStr;
 
   // Open mail app
   var mailto = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
@@ -936,6 +962,95 @@ function showToast(msg) {
   setTimeout(function(){ el.remove(); }, 2600);
 }
 
+
+
+// ===========================================================
+// SIGNATURES
+// ===========================================================
+var sigDrawing = {};
+
+function initSignatures() {
+  ['sigTech','sigClient'].forEach(function(id) {
+    var canvas = document.getElementById(id);
+    if (!canvas) return;
+    var ctx = canvas.getContext('2d');
+    // Resize canvas to actual display size
+    canvas.width = canvas.offsetWidth;
+    canvas.height = 150;
+    ctx.strokeStyle = '#003566';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    // Restore saved signature if exists
+    if (draft && draft['sig_'+id]) {
+      var img = new Image();
+      img.onload = function(){ ctx.drawImage(img,0,0); };
+      img.src = draft['sig_'+id];
+    }
+    sigDrawing[id] = false;
+    canvas.addEventListener('mousedown', function(e){ startDraw(e, id); });
+    canvas.addEventListener('mousemove', function(e){ draw(e, id); });
+    canvas.addEventListener('mouseup',   function(e){ endDraw(id); });
+    canvas.addEventListener('touchstart', function(e){ e.preventDefault(); startDraw(e.touches[0], id); }, {passive:false});
+    canvas.addEventListener('touchmove',  function(e){ e.preventDefault(); draw(e.touches[0], id); }, {passive:false});
+    canvas.addEventListener('touchend',   function(e){ endDraw(id); });
+  });
+}
+
+function getPos(e, canvas) {
+  var rect = canvas.getBoundingClientRect();
+  return { x: (e.clientX - rect.left) * (canvas.width/rect.width), y: (e.clientY - rect.top) * (canvas.height/rect.height) };
+}
+
+function startDraw(e, id) {
+  var canvas = document.getElementById(id);
+  var ctx = canvas.getContext('2d');
+  var pos = getPos(e, canvas);
+  ctx.beginPath();
+  ctx.moveTo(pos.x, pos.y);
+  sigDrawing[id] = true;
+}
+
+function draw(e, id) {
+  if (!sigDrawing[id]) return;
+  var canvas = document.getElementById(id);
+  var ctx = canvas.getContext('2d');
+  var pos = getPos(e, canvas);
+  ctx.lineTo(pos.x, pos.y);
+  ctx.stroke();
+}
+
+function endDraw(id) {
+  sigDrawing[id] = false;
+  var canvas = document.getElementById(id);
+  if (draft) draft['sig_'+id] = canvas.toDataURL();
+  save();
+}
+
+function clearSig(id) {
+  var canvas = document.getElementById(id);
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (draft) draft['sig_'+id] = null;
+  save();
+}
+
+function saveConclusion() {
+  if (document.getElementById('f-conclusion')) draft.conclusion = document.getElementById('f-conclusion').value;
+  if (document.getElementById('f-remarques')) draft.remarques = document.getElementById('f-remarques').value;
+  save();
+  showScreen('s-signature');
+}
+
+function goToRecap() {
+  // Save signatures
+  ['sigTech','sigClient'].forEach(function(id) {
+    var canvas = document.getElementById(id);
+    if (canvas && draft) draft['sig_'+id] = canvas.toDataURL();
+  });
+  save();
+  showScreen('s-recap');
+}
 
 // ===========================================================
 // INIT
