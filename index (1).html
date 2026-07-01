@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Clauger PHE">
+<meta name="theme-color" content="#003566">
+<title>Clauger PHE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f2f5;color:#1a1a2e;overflow:hidden;}
+:root{
+  --navy:#003566;--blue:#0077b6;--red:#d62828;--green:#2d6a4f;
+  --ok:#40916c;--warn:#f4a261;--bg:#f0f2f5;--card:#fff;--border:#dde3ea;
+  --safe-top:env(safe-area-inset-top,0px);--safe-bot:env(safe-area-inset-bottom,0px);
+  --tabh:62px;
+}
+
+/* LAYOUT */
+#app{display:flex;flex-direction:column;height:100%;padding-top:var(--safe-top);}
+#topbar{background:var(--navy);color:#fff;min-height:54px;display:flex;align-items:center;padding:0 14px;gap:10px;flex-shrink:0;}
+#topbar .t-back{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:20px;cursor:pointer;display:none;align-items:center;justify-content:center;flex-shrink:0;}
+#topbar .t-title{flex:1;font-weight:700;font-size:16px;line-height:1.2;}
+#topbar .t-sub{font-size:11px;opacity:.7;display:block;font-weight:400;}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--tabh) + var(--safe-bot) + 10px);}
+#bottomnav{position:fixed;bottom:0;left:0;right:0;height:calc(var(--tabh) + var(--safe-bot));padding-bottom:var(--safe-bot);background:var(--card);border-top:1px solid var(--border);display:flex;z-index:999;box-shadow:0 -2px 8px rgba(0,0,0,.08);}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:none;cursor:pointer;color:#888;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;padding:0;}
+.nav-btn .ni{font-size:23px;line-height:1;}
+.nav-btn.on{color:var(--navy);}
+
+/* SCREENS */
+.screen{display:none;padding:14px;}
+.screen.active{display:block;}
+
+/* CARDS */
+.card{background:var(--card);border-radius:14px;box-shadow:0 2px 10px rgba(0,53,102,.08);overflow:hidden;margin-bottom:12px;}
+.row{display:flex;align-items:center;padding:14px 16px;gap:12px;border-bottom:1px solid var(--border);cursor:pointer;min-height:58px;}
+.row:last-child{border-bottom:none;}
+.row:active{background:#f5f7fa;}
+.ri{font-size:22px;flex-shrink:0;}
+.rc{flex:1;min-width:0;}
+.rt{font-size:15px;font-weight:700;}
+.rs{font-size:13px;color:#888;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rch{color:#ccc;font-size:18px;}
+
+/* BUTTONS */
+.btn{border:none;border-radius:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-appearance:none;transition:opacity .1s;}
+.btn:active{opacity:.75;}
+.btn-navy{background:var(--navy);color:#fff;padding:16px;font-size:16px;width:100%;border-radius:14px;}
+.btn-ghost{background:transparent;color:var(--navy);border:2px solid var(--navy);padding:14px;font-size:15px;width:100%;border-radius:14px;}
+.btn-red{background:var(--red);color:#fff;padding:12px 18px;font-size:14px;border-radius:10px;}
+.btn-ok{background:var(--ok);color:#fff;padding:16px;font-size:16px;width:100%;border-radius:14px;}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px;}
+
+/* FORM */
+.field{margin-bottom:14px;}
+.field label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#888;margin-bottom:5px;}
+.field input,.field select,.field textarea{width:100%;background:var(--card);border:2px solid var(--border);border-radius:10px;padding:13px 14px;font-size:16px;color:#1a1a2e;-webkit-appearance:none;appearance:none;outline:none;font-family:inherit;}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);}
+.field textarea{min-height:80px;resize:vertical;line-height:1.5;}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;}
+
+/* CHECKLIST */
+.cl-item{display:flex;align-items:stretch;background:var(--card);border-bottom:1px solid var(--border);min-height:58px;}
+.cl-item:last-child{border-bottom:none;}
+.cl-txt{flex:1;padding:13px 10px 13px 14px;font-size:14px;line-height:1.4;display:flex;align-items:center;}
+.cl-btns{display:flex;flex-shrink:0;}
+.cb{width:56px;border:none;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;-webkit-appearance:none;}
+.cb.oui{background:#e8f8f0;color:#2d6a4f;border-left:1px solid var(--border);}
+.cb.non{background:#fef0f0;color:#c0392b;border-left:1px solid var(--border);}
+.cb.oui.on{background:#40916c;color:#fff;}
+.cb.non.on{background:#d62828;color:#fff;}
+.an-note{padding:8px 14px 10px;background:#fffaf0;border-bottom:1px solid #fde8c8;display:none;}
+.an-note.show{display:block;}
+.an-note input{width:100%;border:1.5px solid #fde8c8;border-radius:6px;padding:8px 10px;font-size:14px;background:#fff;outline:none;}
+
+/* PROGRESS */
+.prog-wrap{padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border);}
+.prog-bar{height:5px;background:#e8eef4;border-radius:3px;margin-top:5px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--navy);border-radius:3px;transition:width .3s;}
+.prog-txt{display:flex;justify-content:space-between;font-size:13px;}
+
+/* STEPS */
+.steps{display:flex;align-items:center;padding:12px 14px;background:var(--card);border-bottom:1px solid var(--border);}
+.step{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.step.done{background:#40916c;color:#fff;}
+.step.now{background:var(--navy);color:#fff;}
+.step.todo{background:#e8eef4;color:#888;}
+.stepline{flex:1;height:2px;}
+.stepline.done{background:#40916c;}
+.stepline.todo{background:#e8eef4;}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;}
+.chip-b{background:#dbeafe;color:#1d4ed8;}
+.chip-g{background:#d1fae5;color:#065f46;}
+.chip-r{background:#fee2e2;color:#b91c1c;}
+.chip-gr{background:#f3f4f6;color:#6b7280;}
+
+/* MISC */
+.stitle{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#888;margin-bottom:8px;margin-top:4px;}
+.empty{padding:60px 20px;text-align:center;}
+.empty .ei{font-size:52px;margin-bottom:12px;opacity:.35;}
+.empty h3{font-size:17px;font-weight:700;margin-bottom:6px;}
+.empty p{font-size:14px;color:#888;line-height:1.5;}
+.sumrow{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border);font-size:14px;}
+.sumrow:last-child{border-bottom:none;}
+.sk{color:#888;}
+.sv{font-weight:600;text-align:right;max-width:58%;}
+.warn-box{background:#fff8f0;border:1.5px solid #fde8c8;border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+.err-box{background:#fff0f0;border:1.5px solid #fca5a5;border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+
+/* TOAST */
+.toast{position:fixed;top:calc(64px + var(--safe-top));left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:10px 20px;border-radius:24px;font-size:14px;font-weight:600;z-index:9999;pointer-events:none;animation:tIn .2s,tOut .2s 2.3s forwards;}
+@keyframes tIn{from{opacity:0;transform:translateX(-50%) translateY(-8px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+@keyframes tOut{to{opacity:0;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <button class="t-back" id="backBtn" onclick="goBack()">←</button>
+    <div class="t-title" id="topTitle">Clauger PHE <span class="t-sub">Bons d'intervention</span></div>
+  </div>
+
+  <div id="content">
+    <!-- ACCUEIL -->
+    <div class="screen active" id="s-home">
+      <div id="homeContent"></div>
+    </div>
+
+    <!-- RAPPORTS -->
+    <div class="screen" id="s-rapports">
+      <div id="rapportsContent"></div>
+    </div>
+
+    <!-- REGLAGES -->
+    <div class="screen" id="s-reglages">
+      <div class="stitle">Mon profil</div>
+      <div class="card">
+        <div style="padding:14px;">
+          <div class="field">
+            <label>Nom du technicien</label>
+            <input type="text" id="cfg-tech" placeholder="Prénom Nom" oninput="saveConfig()">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Agence / Dépôt</label>
+            <input type="text" id="cfg-agence" placeholder="Paris, Lyon..." oninput="saveConfig()">
+          </div>
+        </div>
+      </div>
+      <div class="stitle">Données</div>
+      <div class="card">
+        <div class="row" onclick="exportAll()">
+          <span class="ri">📤</span>
+          <div class="rc"><div class="rt">Exporter tous les rapports</div><div class="rs">Fichier JSON de sauvegarde</div></div>
+          <span class="rch">›</span>
+        </div>
+        <div class="row" onclick="document.getElementById('imp').click()">
+          <span class="ri">📥</span>
+          <div class="rc"><div class="rt">Importer des rapports</div><div class="rs">Depuis un fichier JSON</div></div>
+          <span class="rch">›</span>
+        </div>
+      </div>
+      <div class="stitle">Installation</div>
+      <div class="card">
+        <div style="padding:14px;font-size:14px;line-height:1.7;color:#444;">
+          <strong>📱 iPhone / iPad :</strong><br>
+          Ouvrir dans <b>Safari</b> → icône Partager ↑ → <b>"Sur l'écran d'accueil"</b><br><br>
+          <strong>🤖 Android :</strong><br>
+          Ouvrir dans <b>Chrome</b> → menu ⋮ → <b>"Ajouter à l'écran d'accueil"</b>
+        </div>
+      </div>
+      <input type="file" id="imp" accept=".json" style="display:none" onchange="importData(this)">
+    </div>
+
+    <!-- NOUVEAU - TYPE -->
+    <div class="screen" id="s-new-type">
+      <div id="newTypeContent"></div>
+    </div>
+
+    <!-- NOUVEAU - INFO -->
+    <div class="screen" id="s-new-info">
+      <div class="card">
+        <div style="padding:14px;">
+          <div class="field"><label>Client *</label><input type="text" id="f-client" placeholder="Nom du client"></div>
+          <div class="field"><label>Technicien *</label><input type="text" id="f-tech" placeholder="Prénom Nom"></div>
+          <div class="field"><label>Agence</label><input type="text" id="f-agence" placeholder="Paris, Lyon..."></div>
+          <div class="field"><label>Date *</label><input type="date" id="f-date"></div>
+        </div>
+      </div>
+      <div class="stitle">Échangeur</div>
+      <div class="card">
+        <div style="padding:14px;">
+          <div class="field"><label>Marque</label><input type="text" id="f-marque" placeholder="Alfa Laval, APV, Tranter..."></div>
+          <div class="field"><label>Modèle / Référence</label><input type="text" id="f-modele" placeholder="M15, T20..."></div>
+          <div class="field"><label>N° de série</label><input type="text" id="f-serie" placeholder="Numéro de série"></div>
+          <div class="field" style="margin-bottom:0"><label>Cote de serrage (mm)</label><input type="number" id="f-cote" placeholder="Ex: 247"></div>
+        </div>
+      </div>
+      <button class="btn btn-navy" onclick="goChecklist()">Continuer → Checklist</button>
+    </div>
+
+    <!-- CHECKLIST -->
+    <div class="screen" id="s-checklist">
+      <div class="prog-wrap">
+        <div class="prog-txt"><span id="prog-txt">0 / 0 renseignés</span><span id="prog-pct">0%</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+      <div class="card" style="margin-top:12px;">
+        <div id="checklistItems"></div>
+      </div>
+      <div style="margin-top:4px;">
+        <button class="btn btn-navy" onclick="showScreen('s-photos')">Continuer → Photos</button>
+      </div>
+    </div>
+
+    <!-- PHOTOS -->
+    <div class="screen" id="s-photos">
+      <div class="stitle">Photos (optionnel)</div>
+      <div id="photoGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;"></div>
+      <input type="file" id="photoInput" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotos(this)">
+      <button class="btn btn-navy" style="margin-bottom:10px;" onclick="showScreen('s-conclusion')">Continuer → Conclusion</button>
+      <button class="btn btn-ghost" onclick="showScreen('s-conclusion')">Passer cette étape</button>
+    </div>
+
+    <!-- CONCLUSION -->
+    <div class="screen" id="s-conclusion">
+      <div id="anomalyPreview"></div>
+      <div class="card">
+        <div style="padding:14px;">
+          <div class="field"><label>Conclusion & constats</label><textarea id="f-conclusion" placeholder="État de l'équipement, prestations effectuées..."></textarea></div>
+          <div class="field" style="margin-bottom:0"><label>Remarques particulières</label><textarea id="f-remarques" placeholder="Pièces à prévoir, infos pour l'agence..."></textarea></div>
+        </div>
+      </div>
+      <button class="btn btn-navy" onclick="showScreen('s-recap')">Voir le récapitulatif →</button>
+    </div>
+
+    <!-- RECAP -->
+    <div class="screen" id="s-recap">
+      <div id="recapContent"></div>
+    </div>
+
+    <!-- DETAIL RAPPORT -->
+    <div class="screen" id="s-detail">
+      <div id="detailContent"></div>
+    </div>
+  </div>
+
+  <div id="bottomnav">
+    <button class="nav-btn on" id="nb-home" onclick="navTo('home')">
+      <span class="ni">🏠</span>Accueil
+    </button>
+    <button class="nav-btn" id="nb-rapports" onclick="navTo('rapports')">
+      <span class="ni">📋</span>Rapports
+    </button>
+    <button class="nav-btn" id="nb-reglages" onclick="navTo('reglages')">
+      <span class="ni">⚙️</span>Réglages
+    </button>
+  </div>
+</div>
+
+<script>
+// ===========================================================
+// TEMPLATES
+// ===========================================================
+var TMPLS = [
+  {id:"cryo_p",app:"PROCESS",label:"Rec cryo - Nettoyage + joints",type:"REVISION INTERMEDIAIRE CRYO",icon:"🧊",
+   cl:["Mesure cote de serrage (mm intérieur bâti)","Ouverture échangeur - dépose tirants","Ouverture du bâti","Contrôle visuel encrassement plaques","Dépose plaques (ordre de groupage)","Nettoyage bâtis (chiffon)","Contrôle visuel état bâtis","Déplacement plaques pour nettoyage extérieur","Déjointage manuel (joints clipsés)","Nettoyage plaques selon procédé Clauger","Remplacement joints neufs","Déplacement plaques vers bâti","Remontage plaques (ordre groupage)","Contrôle alignement plaques","Mise en place & graissage tirants","Serrage tirants à la cote fabricant","Vérification cote serrage H&B","Contrôle alignement plaques","Mise en pression - contrôle étanchéité","Remise en service et relevés"]},
+  {id:"plates_p",app:"PROCESS",label:"Remplacement des plaques",type:"REMPLACEMENT DES PLAQUES",icon:"🔄",
+   cl:["Mesure cote de serrage","Ouverture échangeur - dépose tirants","Ouverture du bâti","Dépose anciennes plaques","Nettoyage bâtis","Contrôle visuel état bâtis","Remplacement plaques & joints","Remontage plaques","Contrôle alignement","Mise en place & graissage tirants","Serrage tirants à la cote fabricant","Vérification cote serrage","Contrôle alignement","Mise en pression - étanchéité","Remise en service"]},
+  {id:"demont_p",app:"PROCESS",label:"Démontage pour atelier",type:"DEMONTAGE POUR ATELIER",icon:"📦",
+   cl:["Mesure cote de serrage","Ouverture échangeur - dépose tirants","Ouverture du bâti","Contrôle visuel plaques","Dépose plaques (repérage remontage)","Nettoyage bâtis","Contrôle visuel bâtis","Conditionnement jeu de plaques","Protection & fermeture provisoire bâti"]},
+  {id:"remont_p",app:"PROCESS",label:"Remontage après atelier",type:"REMONTAGE APRES ATELIER",icon:"🔧",
+   cl:["Réception & contrôle visuel plaques atelier","Mise en place plaques (ordre groupage)","Contrôle alignement","Mise en place & graissage tirants","Serrage tirants à la cote fabricant","Vérification cote serrage","Contrôle alignement","Mise en pression - étanchéité","Remise en service"]},
+
+  {id:"rejoint_int_p",app:"PROCESS",label:"Rejointage + test d'intégrité",type:"REJOINTAGE + TEST INTEGRITE",icon:"🔩",
+   cl:["Mesure de la cote de serrage","Ouverture échangeur - dépose tirants","Ouverture du bâti","Dépose plaques (ordre groupage)","Déjointage manuel (joints clipsés)","Contrôle visuel état des plaques","Remplacement joints neufs","Remontage plaques (ordre groupage)","Contrôle alignement plaques","Mise en place & graissage tirants","Serrage tirants à la cote fabricant","Vérification cote serrage H&B","Contrôle alignement plaques","Raccordement banc de test","Montée en pression progressive","Maintien en pression et relevé du temps","Contrôle étanchéité - recherche de fuite","Dépressurisation et dépose banc de test","Remise en service et relevés"]},
+  {id:"plates_int_p",app:"PROCESS",label:"Remplacement plaques + test d'intégrité",type:"REMPLACEMENT PLAQUES + TEST INTEGRITE",icon:"🔄",
+   cl:["Mesure cote de serrage","Ouverture échangeur - dépose tirants","Ouverture du bâti","Dépose anciennes plaques","Nettoyage bâtis","Contrôle visuel bâtis","Remplacement plaques & joints","Remontage plaques","Contrôle alignement","Serrage tirants à la cote fabricant","Vérification cote serrage H&B","Contrôle alignement plaques","Raccordement banc de test","Montée en pression progressive","Maintien en pression et relevé du temps","Contrôle étanchéité - recherche de fuite","Dépressurisation et dépose banc de test","Remise en service et relevés"]},
+  {id:"campagne_p",app:"PROCESS",label:"Campagne test d'intégrité (multi-échangeurs)",type:"CAMPAGNE TEST D'INTEGRITE",icon:"🧪",
+   cl:["Identification et inventaire des échangeurs à tester","Isolement et préparation de l'échangeur","Raccordement banc de test (raccords / manomètre)","Montée en pression progressive","Maintien en pression et relevé du temps","Contrôle étanchéité - recherche de fuite","Relevé résultat (OK / NON OK)","Dépressurisation et dépose banc de test","Remise en configuration normale","Passage à l'échangeur suivant"]},
+  {id:"leak_r",app:"REFRIGERATION",label:"Recherche de fuite / Contrôle",type:"RECHERCHE DE FUITE / CONTRÔLE",icon:"💧",
+   cl:["Mise à l'arrêt machine","Isolement & consignation élec/fluidique","Vidange - mise à pression atmosphérique","Dépose tuyauteries côté bâti mobile","Mesure cote de serrage","Ouverture échangeur - dépose tirants","Ouverture du bâti","Contrôle visuel plaques","Dépose plaques (ordre groupage)","Nettoyage bâtis","Contrôle visuel bâtis","Déjointage manuel","Nettoyage plaques Clauger","Remplacement joints neufs","Remontage plaques","Contrôle alignement","Serrage tirants","Vérification cote serrage","Raccordement tuyauteries","Charge en fluide","Mise en pression - étanchéité","Contrôle sécurités","Remise en service"]},
+  {id:"cryo_r",app:"REFRIGERATION",label:"Rec cryo - Nettoyage + joints",type:"REVISION INTERMEDIAIRE CRYO",icon:"🧊",
+   cl:["Mise à l'arrêt machine","Isolement & consignation","Vidange","Mesure cote de serrage","Ouverture échangeur - dépose tirants","Ouverture du bâti","Contrôle visuel plaques","Dépose plaques","Nettoyage bâtis","Contrôle visuel bâtis","Déjointage manuel","Nettoyage plaques Clauger","Remplacement joints neufs","Remontage plaques","Contrôle alignement","Serrage tirants","Vérification cote serrage","Charge en fluide","Mise en pression - étanchéité","Contrôle sécurités","Remise en service"]},
+  {id:"jdpl_r",app:"REFRIGERATION",label:"Remplacement JDPL complet",type:"REVISION COMPLETE JDPL",icon:"🔄",
+   cl:["Mise à l'arrêt machine","Isolement & consignation","Vidange","Dépose tuyauteries côté mobile","Mesure cote de serrage","Ouverture échangeur - dépose tirants","Ouverture du bâti","Dépose plaques","Nettoyage bâtis","Contrôle visuel bâtis","Remplacement plaques & joints","Remontage plaques","Contrôle alignement","Serrage tirants","Vérification cote serrage","Raccordement tuyauteries","Charge en fluide","Mise en pression - étanchéité","Contrôle sécurités","Remise en service"]},
+  {id:"diag",app:null,label:"Diagnostic / Garantie",type:"DIAGNOSTIC / GARANTIE",icon:"🔍",
+   cl:["Recueil historique panne","Contrôle visuel global","Contrôle paramètres fonctionnement","Recherche fuite / contrôle étanchéité","Identification cause probable","Préconisations / devis pièces"]},
+  {id:"phe",app:null,label:"Remplacement PHE complet",type:"REMPLACEMENT PHE COMPLET",icon:"🏗️",
+   cl:["Mise à l'arrêt & consignation","Dépose tuyauteries & instrumentation","Désaccouplement & évacuation ancien PHE","Mise en place nouvel échangeur","Raccordement tuyauteries & instrumentation","Contrôle alignement & fixation","Charge en fluide","Mise en pression - étanchéité","Mise en service et relevés","Relevé plaque signalétique"]},
+  {id:"custom",app:null,label:"Intervention personnalisée",type:"",icon:"✏️",cl:[]}
+];
+
+// ===========================================================
+// STATE
+// ===========================================================
+var reports = [];
+var cfg = {tech:'', agence:''};
+var draft = null;
+var curScreen = 's-home';
+var navStack = [];
+var detailId = null;
+
+// ===========================================================
+// STORAGE
+// ===========================================================
+function save() {
+  try { localStorage.setItem('cphe_v3', JSON.stringify({reports:reports, cfg:cfg, draft:draft})); } catch(e){}
+}
+function load() {
+  try {
+    var d = JSON.parse(localStorage.getItem('cphe_v3')||'{}');
+    if (d.reports) reports = d.reports;
+    if (d.cfg) { cfg.tech = d.cfg.tech||''; cfg.agence = d.cfg.agence||''; }
+    if (d.draft) draft = d.draft;
+  } catch(e){}
+}
+
+// ===========================================================
+// NAVIGATION
+// ===========================================================
+function showScreen(id, addToStack) {
+  if (addToStack !== false) navStack.push(curScreen);
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  curScreen = id;
+  document.getElementById('content').scrollTop = 0;
+
+  // Show/hide back button
+  var inWizard = ['s-new-type','s-new-info','s-checklist','s-photos','s-conclusion','s-recap','s-detail'].indexOf(id) >= 0;
+  var backBtn = document.getElementById('backBtn');
+  backBtn.style.display = inWizard ? 'flex' : 'none';
+
+  // Show/hide bottomnav
+  var bottomnav = document.getElementById('bottomnav');
+  var wizardScreens = ['s-new-type','s-new-info','s-checklist','s-photos','s-conclusion','s-recap'];
+  bottomnav.style.display = wizardScreens.indexOf(id) >= 0 ? 'none' : 'flex';
+
+  updateTopbar();
+  if (id === 's-home') renderHome();
+  if (id === 's-rapports') renderRapports();
+  if (id === 's-new-type') renderNewType();
+  if (id === 's-recap') renderRecap();
+  if (id === 's-detail') renderDetail();
+  if (id === 's-conclusion') renderAnomalyPreview();
+  if (id === 's-reglages') {
+    document.getElementById('cfg-tech').value = cfg.tech;
+    document.getElementById('cfg-agence').value = cfg.agence;
+  }
+}
+
+function navTo(tab) {
+  ['home','rapports','reglages'].forEach(function(t){
+    document.getElementById('nb-'+t).classList.toggle('on', t===tab);
+  });
+  navStack = [];
+  showScreen('s-'+tab, false);
+}
+
+function goBack() {
+  if (navStack.length > 0) {
+    var prev = navStack.pop();
+    showScreen(prev, false);
+  } else {
+    navTo('home');
+  }
+}
+
+function updateTopbar() {
+  var titles = {
+    's-home': 'Clauger PHE <span class="t-sub">Bons d\'intervention</span>',
+    's-rapports': 'Mes rapports <span class="t-sub">'+reports.length+' rapport(s)</span>',
+    's-reglages': 'Réglages <span class="t-sub">Profil technicien</span>',
+    's-new-type': 'Nouveau rapport <span class="t-sub">Étape 1/5 — Type de prestation</span>',
+    's-new-info': 'Informations <span class="t-sub">Étape 2/5 — Client & équipement</span>',
+    's-checklist': 'Checklist <span class="t-sub">Étape 3/5</span>',
+    's-photos': 'Photos <span class="t-sub">Étape 4/5 — Optionnel</span>',
+    's-conclusion': 'Conclusion <span class="t-sub">Étape 5/5</span>',
+    's-recap': 'Récapitulatif <span class="t-sub">Prêt à enregistrer</span>',
+    's-detail': 'Rapport <span class="t-sub">'+(detailId ? (reports.find(function(r){return r.id===detailId;})||{}).client||'' : '')+'</span>'
+  };
+  document.getElementById('topTitle').innerHTML = titles[curScreen] || 'Clauger PHE';
+}
+
+// ===========================================================
+// HOME
+// ===========================================================
+function renderHome() {
+  var tech = cfg.tech || 'Technicien';
+  var prenom = tech.split(' ')[0];
+  var today = new Date().toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  var recent = reports.slice(-3).reverse();
+  var draftHtml = '';
+  if (draft) {
+    var tl = (TMPLS.find(function(t){return t.id===draft.tid;})||{}).label || 'Intervention';
+    draftHtml = '<div class="stitle">Brouillon en cours</div>'
+      +'<div class="card" style="border:2px solid #f4a261;">'
+      +'<div class="row" onclick="resumeDraft()">'
+      +'<span class="ri">📝</span>'
+      +'<div class="rc"><div class="rt">'+(draft.client||'Client non renseigné')+'</div><div class="rs">'+tl+' · En cours</div></div>'
+      +'<span style="background:#f4a261;color:#fff;font-size:11px;font-weight:700;padding:4px 10px;border-radius:10px;">Reprendre →</span>'
+      +'</div></div>';
+  }
+  var recentHtml = '';
+  if (recent.length > 0) {
+    recentHtml = '<div class="stitle">Rapports récents</div><div class="card">'
+      + recent.map(function(r){
+          var dot = r.anomalies>0 ? 'background:#f4a261' : 'background:#40916c';
+          return '<div class="row" onclick="openReport(\''+r.id+'\')">'
+            +'<div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;'+dot+'"></div>'
+            +'<div class="rc"><div class="rt">'+(r.client||'—')+'</div><div class="rs">'+(r.type||r.tid)+' · '+(r.date||'')+'</div></div>'
+            +'<span class="rch">›</span></div>';
+        }).join('')
+      + '</div>';
+  } else {
+    recentHtml = '<div class="empty"><div class="ei">📋</div><h3>Aucun rapport</h3><p>Commencez par créer votre premier bon d\'intervention.</p></div>';
+  }
+  document.getElementById('homeContent').innerHTML =
+    '<div style="background:linear-gradient(135deg,#003566,#0077b6);color:#fff;border-radius:14px;padding:18px;margin-bottom:16px;">'
+    +'<div style="font-size:12px;opacity:.7;margin-bottom:4px;">'+today+'</div>'
+    +'<div style="font-size:21px;font-weight:800;margin-bottom:2px;">Bonjour, '+prenom+' 👋</div>'
+    +'<div style="font-size:13px;opacity:.8;">'+reports.length+' rapport(s) enregistré(s)</div></div>'
+    + draftHtml
+    +'<button class="btn btn-navy" onclick="startNew()" style="margin-bottom:16px;font-size:17px;padding:18px;">＋  Nouveau rapport</button>'
+    + recentHtml;
+}
+
+// ===========================================================
+// RAPPORTS
+// ===========================================================
+function renderRapports() {
+  if (reports.length === 0) {
+    document.getElementById('rapportsContent').innerHTML =
+      '<div class="empty"><div class="ei">📭</div><h3>Aucun rapport</h3><p>Créez votre premier rapport depuis l\'accueil.</p></div>';
+    return;
+  }
+  var sorted = reports.slice().reverse();
+  document.getElementById('rapportsContent').innerHTML = sorted.map(function(r){
+    var tmpl = TMPLS.find(function(t){return t.id===r.tid;})||{};
+    var appChip = r.app ? (r.app==='PROCESS'
+      ? '<span class="chip chip-b">'+r.app+'</span>'
+      : '<span class="chip chip-g">'+r.app+'</span>') : '';
+    var anomChip = r.anomalies>0
+      ? '<span class="chip chip-r">'+r.anomalies+' anomalie(s)</span>'
+      : '<span class="chip chip-g">RAS</span>';
+    return '<div class="card"><div class="row" onclick="openReport(\''+r.id+'\')">'
+      +'<span class="ri">'+(tmpl.icon||'📋')+'</span>'
+      +'<div class="rc">'
+      +'<div class="rt">'+(r.client||'—')+'</div>'
+      +'<div class="rs">'+(r.type||r.tid)+'</div>'
+      +'<div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;">'+appChip+anomChip+'<span class="chip chip-gr">'+(r.date||'—')+'</span></div>'
+      +'</div><span class="rch">›</span></div></div>';
+  }).join('');
+}
+
+// ===========================================================
+// NEW REPORT
+// ===========================================================
+function startNew() {
+  draft = {id:'R'+Date.now(), tid:null, client:'', tech:cfg.tech||'', agence:cfg.agence||'', date:new Date().toISOString().split('T')[0], marque:'', modele:'', serie:'', cote:'', app:'', type:'', cl:[], photos:[], conclusion:'', remarques:''};
+  save();
+  showScreen('s-new-type');
+}
+
+function resumeDraft() {
+  if (!draft) return;
+  if (!draft.tid) { showScreen('s-new-type'); return; }
+  if (!draft.client) { fillInfoForm(); showScreen('s-new-info'); return; }
+  showScreen('s-checklist');
+  renderChecklist();
+}
+
+function renderNewType() {
+  var process = TMPLS.filter(function(t){return t.app==='PROCESS';});
+  var refrig  = TMPLS.filter(function(t){return t.app==='REFRIGERATION';});
+  var other   = TMPLS.filter(function(t){return t.app===null;});
+  function rows(arr) {
+    return arr.map(function(t){
+      return '<div class="row" onclick="pickTemplate(\''+t.id+'\')">'
+        +'<span class="ri">'+t.icon+'</span>'
+        +'<div class="rc"><div class="rt">'+t.label+'</div><div class="rs">'+t.type+'</div></div>'
+        +'<span class="rch">›</span></div>';
+    }).join('');
+  }
+  document.getElementById('newTypeContent').innerHTML =
+    '<div class="stitle">⚙️ Process</div><div class="card">'+rows(process)+'</div>'
+    +'<div class="stitle">❄️ Réfrigération</div><div class="card">'+rows(refrig)+'</div>'
+    +'<div class="stitle">Autres</div><div class="card">'+rows(other)+'</div>';
+}
+
+function pickTemplate(id) {
+  var t = TMPLS.find(function(x){return x.id===id;});
+  if (!t) return;
+  draft.tid = id;
+  draft.app = t.app||'';
+  draft.type = t.type||'';
+  draft.cl = t.cl.map(function(l){return {l:l, s:'', r:''};});
+  save();
+  fillInfoForm();
+  showScreen('s-new-info');
+}
+
+function fillInfoForm() {
+  document.getElementById('f-client').value  = draft.client||'';
+  document.getElementById('f-tech').value    = draft.tech||cfg.tech||'';
+  document.getElementById('f-agence').value  = draft.agence||cfg.agence||'';
+  document.getElementById('f-date').value    = draft.date||new Date().toISOString().split('T')[0];
+  document.getElementById('f-marque').value  = draft.marque||'';
+  document.getElementById('f-modele').value  = draft.modele||'';
+  document.getElementById('f-serie').value   = draft.serie||'';
+  document.getElementById('f-cote').value    = draft.cote||'';
+}
+
+function goChecklist() {
+  var client = document.getElementById('f-client').value.trim();
+  var tech   = document.getElementById('f-tech').value.trim();
+  var date   = document.getElementById('f-date').value;
+  if (!client || !tech || !date) { showToast('⚠️ Client, technicien et date sont requis'); return; }
+  draft.client  = client;
+  draft.tech    = tech;
+  draft.agence  = document.getElementById('f-agence').value.trim();
+  draft.date    = date;
+  draft.marque  = document.getElementById('f-marque').value.trim();
+  draft.modele  = document.getElementById('f-modele').value.trim();
+  draft.serie   = document.getElementById('f-serie').value.trim();
+  draft.cote    = document.getElementById('f-cote').value.trim();
+  save();
+  renderChecklist();
+  showScreen('s-checklist');
+}
+
+// ===========================================================
+// CHECKLIST
+// ===========================================================
+function renderChecklist() {
+  if (!draft) return;
+  var cl = draft.cl;
+  if (cl.length === 0) {
+    document.getElementById('checklistItems').innerHTML = '<div style="padding:20px;text-align:center;color:#888;">Aucune checklist pour ce type d\'intervention.</div>';
+    updateProgress();
+    return;
+  }
+  var html = cl.map(function(c, i){
+    return '<div id="cli-'+i+'">'
+      +'<div class="cl-item">'
+      +'<div class="cl-txt">'+c.l+'</div>'
+      +'<div class="cl-btns">'
+      +'<button class="cb oui'+(c.s==='OUI'?' on':'')+ '" onclick="setCheck('+i+',\'OUI\')">✓</button>'
+      +'<button class="cb non'+(c.s==='NON'?' on':'')+ '" onclick="setCheck('+i+',\'NON\')">✗</button>'
+      +'</div></div>'
+      +'<div class="an-note'+(c.s==='NON'?' show':'')+'" id="an-'+i+'">'
+      +'<input type="text" placeholder="Remarque sur cette anomalie..." value="'+(c.r||'')+'" oninput="setRemark('+i+',this.value)">'
+      +'</div></div>';
+  }).join('');
+  document.getElementById('checklistItems').innerHTML = html;
+  updateProgress();
+}
+
+function setCheck(i, val) {
+  if (!draft) return;
+  draft.cl[i].s = draft.cl[i].s === val ? '' : val;
+  save();
+  // Update buttons
+  var wrap = document.getElementById('cli-'+i);
+  if (!wrap) return;
+  wrap.querySelectorAll('.cb').forEach(function(b){ b.classList.remove('on'); });
+  if (draft.cl[i].s) {
+    var cls = draft.cl[i].s === 'OUI' ? 'oui' : 'non';
+    wrap.querySelector('.cb.'+cls).classList.add('on');
+  }
+  var note = document.getElementById('an-'+i);
+  if (note) note.classList.toggle('show', draft.cl[i].s === 'NON');
+  updateProgress();
+}
+
+function setRemark(i, val) {
+  if (!draft) return;
+  draft.cl[i].r = val;
+  save();
+}
+
+function updateProgress() {
+  if (!draft) return;
+  var cl = draft.cl;
+  var done = cl.filter(function(c){return c.s;}).length;
+  var pct = cl.length > 0 ? Math.round(done/cl.length*100) : 0;
+  var el = document.getElementById('prog-txt');
+  var pp = document.getElementById('prog-pct');
+  var pf = document.getElementById('prog-fill');
+  if (el) el.textContent = done+' / '+cl.length+' renseignés';
+  if (pp) pp.textContent = pct+'%';
+  if (pf) pf.style.width = pct+'%';
+}
+
+// ===========================================================
+// PHOTOS
+// ===========================================================
+function renderPhotoGrid() {
+  var photos = draft ? draft.photos||[] : [];
+  var html = photos.map(function(p,i){
+    return '<div style="aspect-ratio:1;border-radius:8px;overflow:hidden;position:relative;">'
+      +'<img src="'+p+'" style="width:100%;height:100%;object-fit:cover;">'
+      +'<button onclick="removePhoto('+i+')" style="position:absolute;top:4px;right:4px;width:24px;height:24px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;font-size:14px;cursor:pointer;">×</button>'
+      +'</div>';
+  }).join('');
+  if (photos.length < 12) {
+    html += '<div onclick="document.getElementById(\'photoInput\').click()" style="aspect-ratio:1;border-radius:8px;border:2px dashed #ccc;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;cursor:pointer;font-size:11px;color:#888;font-weight:700;">'
+      +'<span style="font-size:28px;">📷</span><span>Ajouter</span></div>';
+  }
+  document.getElementById('photoGrid').innerHTML = html;
+}
+
+function handlePhotos(input) {
+  var files = Array.from(input.files);
+  var pending = files.length;
+  files.forEach(function(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      if (!draft.photos) draft.photos = [];
+      draft.photos.push(e.target.result);
+      pending--;
+      if (pending === 0) { save(); renderPhotoGrid(); }
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+
+function removePhoto(i) {
+  draft.photos.splice(i, 1);
+  save();
+  renderPhotoGrid();
+}
+
+// ===========================================================
+// CONCLUSION
+// ===========================================================
+function renderAnomalyPreview() {
+  if (!draft) return;
+  var anom = draft.cl.filter(function(c){return c.s==='NON';});
+  var el = document.getElementById('anomalyPreview');
+  if (!el) return;
+  if (anom.length > 0) {
+    el.innerHTML = '<div class="warn-box">'
+      +'<div style="font-weight:700;color:#c05c00;margin-bottom:6px;">⚠️ '+anom.length+' anomalie(s) détectée(s)</div>'
+      +anom.map(function(a){return '<div style="font-size:13px;padding:2px 0;">• '+a.l+(a.r?' : <em>'+a.r+'</em>':'')+'</div>';}).join('')
+      +'</div>';
+  } else {
+    el.innerHTML = '';
+  }
+  document.getElementById('f-conclusion').value = draft.conclusion||'';
+  document.getElementById('f-remarques').value  = draft.remarques||'';
+}
+
+// ===========================================================
+// RECAP
+// ===========================================================
+function renderRecap() {
+  if (!draft) return;
+  draft.conclusion = document.getElementById('f-conclusion') ? document.getElementById('f-conclusion').value : draft.conclusion;
+  draft.remarques  = document.getElementById('f-remarques')  ? document.getElementById('f-remarques').value  : draft.remarques;
+  save();
+
+  var cl = draft.cl||[];
+  var ok   = cl.filter(function(c){return c.s==='OUI';}).length;
+  var nok  = cl.filter(function(c){return c.s==='NON';}).length;
+  var miss = [];
+  if (!draft.client) miss.push('Client');
+  if (!draft.tech)   miss.push('Technicien');
+  if (!draft.date)   miss.push('Date');
+
+  var missHtml = miss.length > 0
+    ? '<div class="err-box"><div style="font-weight:700;color:#b91c1c;margin-bottom:4px;">⚠️ Champs manquants</div><div style="font-size:13px;">• '+miss.join('<br>• ')+'</div></div>'
+    : '';
+
+  document.getElementById('recapContent').innerHTML =
+    missHtml
+    +'<div class="card">'
+    +'<div class="sumrow"><span class="sk">Client</span><span class="sv">'+(draft.client||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Technicien</span><span class="sv">'+(draft.tech||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Date</span><span class="sv">'+(draft.date||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Agence</span><span class="sv">'+(draft.agence||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Prestation</span><span class="sv">'+(draft.type||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Équipement</span><span class="sv">'+([draft.marque,draft.modele].filter(Boolean).join(' ')||'—')+'</span></div>'
+    +'</div>'
+    +'<div class="card">'
+    +'<div class="sumrow"><span class="sk">Checklist</span><span class="sv"><span class="chip chip-g">'+ok+' OK</span>'+(nok>0?' <span class="chip chip-r">'+nok+' NON</span>':'')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Photos</span><span class="sv">'+(draft.photos||[]).length+' photo(s)</span></div>'
+    +'<div class="sumrow"><span class="sk">Conclusion</span><span class="sv">'+(draft.conclusion?'✅ Renseignée':'—')+'</span></div>'
+    +'</div>'
+    +'<button class="btn btn-ok" onclick="saveReport()" style="margin-top:14px;margin-bottom:10px;">✓ Enregistrer le rapport</button>'
+    +'<button class="btn btn-ghost" onclick="showScreen(\'s-conclusion\')">← Modifier</button>';
+}
+
+// ===========================================================
+// SAVE REPORT
+// ===========================================================
+function saveReport() {
+  if (!draft) return;
+  draft.conclusion = document.getElementById('f-conclusion') ? document.getElementById('f-conclusion').value : draft.conclusion;
+  draft.remarques  = document.getElementById('f-remarques')  ? document.getElementById('f-remarques').value  : draft.remarques;
+
+  if (!draft.client||!draft.tech||!draft.date) { showToast('⚠️ Client, technicien et date sont requis'); return; }
+  var anom = (draft.cl||[]).filter(function(c){return c.s==='NON';}).length;
+  var report = {
+    id:draft.id, tid:draft.tid, app:draft.app, type:draft.type,
+    client:draft.client, tech:draft.tech, agence:draft.agence, date:draft.date,
+    marque:draft.marque, modele:draft.modele, serie:draft.serie, cote:draft.cote,
+    cl:draft.cl, photos:draft.photos||[], conclusion:draft.conclusion, remarques:draft.remarques,
+    anomalies:anom, savedAt:new Date().toISOString()
+  };
+  var idx = reports.findIndex(function(r){return r.id===draft.id;});
+  if (idx>=0) reports[idx]=report; else reports.push(report);
+  draft = null;
+  save();
+  showToast('✅ Rapport enregistré !');
+  navTo('rapports');
+}
+
+// ===========================================================
+// DETAIL RAPPORT
+// ===========================================================
+function openReport(id) {
+  detailId = id;
+  showScreen('s-detail');
+}
+
+function renderDetail() {
+  var r = reports.find(function(x){return x.id===detailId;});
+  if (!r) return;
+  var cl = r.cl||[];
+  var anom = cl.filter(function(c){return c.s==='NON';});
+  var ok   = cl.filter(function(c){return c.s==='OUI';});
+  var dateStr = r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—';
+
+  var anomHtml = anom.length > 0
+    ? '<div class="stitle" style="color:#b91c1c;">⚠️ '+anom.length+' Anomalie(s)</div>'
+      +'<div class="card" style="border:2px solid #fca5a5;">'
+      +anom.map(function(a){return '<div style="padding:10px 14px;border-bottom:1px solid #fef2f2;font-size:13px;"><b style="color:#b91c1c;">'+a.l+'</b>'+(a.r?'<div style="color:#c05c00;font-style:italic;margin-top:2px;">'+a.r+'</div>':'')+'</div>';}).join('')
+      +'</div>'
+    : '';
+
+  var clHtml = cl.length > 0
+    ? '<div class="stitle">Checklist ('+ok.length+'/'+cl.length+' OK)</div>'
+      +'<div class="card">'
+      +cl.map(function(c){
+          var ico = c.s==='OUI'?'✅':c.s==='NON'?'❌':'⬜';
+          return '<div style="display:flex;align-items:center;padding:10px 14px;gap:10px;border-bottom:1px solid var(--border);">'
+            +'<span>'+ico+'</span><span style="flex:1;font-size:13px;">'+c.l+'</span>'
+            +(c.r?'<span style="font-size:11px;color:#c05c00;font-style:italic;">'+c.r+'</span>':'')
+            +'</div>';
+        }).join('')
+      +'</div>'
+    : '';
+
+  document.getElementById('detailContent').innerHTML =
+    '<div class="card">'
+    +'<div class="sumrow"><span class="sk">Client</span><span class="sv">'+(r.client||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Technicien</span><span class="sv">'+(r.tech||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Date</span><span class="sv">'+dateStr+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Agence</span><span class="sv">'+(r.agence||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Prestation</span><span class="sv">'+(r.type||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">Équipement</span><span class="sv">'+([r.marque,r.modele].filter(Boolean).join(' ')||'—')+'</span></div>'
+    +'<div class="sumrow"><span class="sk">N° série</span><span class="sv">'+(r.serie||'—')+'</span></div>'
+    +(r.cote?'<div class="sumrow"><span class="sk">Cote serrage</span><span class="sv">'+r.cote+' mm</span></div>':'')
+    +'</div>'
+    + anomHtml + clHtml
+    +(r.conclusion?'<div class="stitle">Conclusion</div><div class="card"><div style="padding:12px 14px;font-size:14px;line-height:1.6;">'+r.conclusion+'</div></div>':'')
+    +(r.remarques?'<div class="stitle">Remarques</div><div class="card"><div style="padding:12px 14px;font-size:14px;line-height:1.6;">'+r.remarques+'</div></div>':'')
+    +'<div style="display:flex;gap:8px;margin-top:6px;margin-bottom:6px;">'
+    +'<button class="btn btn-navy btn-sm" style="flex:1;" onclick="exportPDF(\''+r.id+'\')">📧 Envoyer par email</button>'
+    +'<button class="btn btn-ghost btn-sm" style="flex:1;" onclick="editReport(\''+r.id+'\')">✏️ Modifier</button>'
+    +'</div>'
+    +'<div style="margin-bottom:14px;">'
+    +'<button class="btn btn-red btn-sm" style="width:100%;" onclick="deleteReport(\''+r.id+'\')">🗑️ Supprimer ce rapport</button>'
+    +'</div>';
+}
+
+// ===========================================================
+// EXPORT PDF
+// ===========================================================
+function exportPDF(id) {
+  var r = reports.find(function(x){return x.id===id;});
+  if (!r) return;
+
+  var cl = r.cl||[];
+  var anom = cl.filter(function(c){return c.s==='NON';});
+  var ok   = cl.filter(function(c){return c.s==='OUI';});
+  var dateStr = r.date ? new Date(r.date).toLocaleDateString('fr-FR') : '—';
+
+  // Build email body
+  var sep = '────────────────────────────';
+  var body = 'BON D'INTERVENTION PHE — CLAUGER\n';
+  body += sep + '\n\n';
+  body += '📋 INFORMATIONS\n';
+  body += 'Client       : ' + (r.client||'—') + '\n';
+  body += 'Technicien   : ' + (r.tech||'—') + '\n';
+  body += 'Date         : ' + dateStr + '\n';
+  body += 'Agence       : ' + (r.agence||'—') + '\n';
+  body += 'Prestation   : ' + (r.type||'—') + '\n';
+  body += 'Application  : ' + (r.app||'—') + '\n';
+  body += 'Équipement   : ' + ([r.marque,r.modele].filter(Boolean).join(' / ')||'—') + '\n';
+  body += 'N° de série  : ' + (r.serie||'—') + '\n';
+  if (r.cote) body += 'Cote serrage : ' + r.cote + ' mm\n';
+  body += '\n';
+
+  if (cl.length > 0) {
+    body += sep + '\n';
+    body += '✅ CHECKLIST (' + ok.length + '/' + cl.length + ' OK)\n';
+    body += sep + '\n';
+    cl.forEach(function(c) {
+      var ico = c.s==='OUI' ? '✅' : c.s==='NON' ? '❌' : '⬜';
+      body += ico + ' ' + c.l + (c.r ? ' → ' + c.r : '') + '\n';
+    });
+    body += '\n';
+  }
+
+  if (anom.length > 0) {
+    body += sep + '\n';
+    body += '⚠️ ANOMALIES DÉTECTÉES (' + anom.length + ')\n';
+    body += sep + '\n';
+    anom.forEach(function(a) {
+      body += '• ' + a.l + (a.r ? ' : ' + a.r : '') + '\n';
+    });
+    body += '\n';
+  }
+
+  body += sep + '\n';
+  body += '📝 CONCLUSION\n';
+  body += sep + '\n';
+  body += (r.conclusion||'—') + '\n\n';
+
+  body += sep + '\n';
+  body += '💬 REMARQUES\n';
+  body += sep + '\n';
+  body += (r.remarques||'—') + '\n\n';
+
+  body += sep + '\n';
+  body += 'Rapport généré le ' + new Date().toLocaleDateString('fr-FR') + ' — Réf. ' + r.id + '\n';
+  body += 'Clauger — www.clauger.com\n';
+
+  var subject = 'Bon d'intervention PHE — ' + (r.client||'') + ' — ' + dateStr;
+
+  // Open mail app
+  var mailto = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  window.location.href = mailto;
+}
+
+
+// ===========================================================
+// EDIT REPORT
+// ===========================================================
+function editReport(id) {
+  var r = reports.find(function(x){return x.id===id;});
+  if (!r) return;
+  draft = {
+    id:r.id, tid:r.tid, client:r.client||'', tech:r.tech||'', agence:r.agence||'',
+    date:r.date||'', marque:r.marque||'', modele:r.modele||'', serie:r.serie||'',
+    cote:r.cote||'', app:r.app||'', type:r.type||'',
+    cl: r.cl ? r.cl.map(function(c){return {l:c.l,s:c.s,r:c.r};}) : [],
+    photos:r.photos||[], conclusion:r.conclusion||'', remarques:r.remarques||''
+  };
+  save();
+  var choice = confirm('Que voulez-vous modifier ?\n\nOK = Informations & équipement\nAnnuler = Checklist & conclusion');
+  if (choice) { fillInfoForm(); showScreen('s-new-info'); }
+  else { renderChecklist(); showScreen('s-checklist'); }
+  showToast('✏️ Mode modification');
+}
+
+// ===========================================================
+// DELETE / EXPORT ALL / IMPORT
+// ===========================================================
+function deleteReport(id) {
+  if (!confirm('Supprimer ce rapport ?')) return;
+  reports = reports.filter(function(r){return r.id!==id;});
+  save();
+  showToast('Rapport supprimé');
+  navTo('rapports');
+}
+
+function exportAll() {
+  var data = JSON.stringify({version:3, reports:reports, exportedAt:new Date().toISOString()}, null, 2);
+  var blob = new Blob([data], {type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href   = url;
+  a.download = 'clauger_rapports_'+new Date().toISOString().split('T')[0]+'.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function importData(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try {
+      var d = JSON.parse(e.target.result);
+      if (d.reports && Array.isArray(d.reports)) {
+        var added = 0;
+        d.reports.forEach(function(r){
+          if (!reports.find(function(x){return x.id===r.id;})) { reports.push(r); added++; }
+        });
+        save();
+        showToast('✅ '+added+' rapport(s) importé(s)');
+        renderRapports();
+      }
+    } catch(e){ showToast('❌ Fichier invalide'); }
+  };
+  reader.readAsText(file);
+  input.value = '';
+}
+
+function saveConfig() {
+  cfg.tech   = document.getElementById('cfg-tech').value;
+  cfg.agence = document.getElementById('cfg-agence').value;
+  save();
+}
+
+// ===========================================================
+// TOAST
+// ===========================================================
+function showToast(msg) {
+  var old = document.querySelector('.toast');
+  if (old) old.remove();
+  var el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(function(){ el.remove(); }, 2600);
+}
+
+
+// ===========================================================
+// INIT
+// ===========================================================
+load();
+renderHome();
+
+// Init photos screen
+document.getElementById('s-photos').addEventListener('click', function(){});
+document.querySelector('#s-photos').insertAdjacentHTML('afterbegin','');
+
+// Render photo grid when photos screen is shown
+var origShow = showScreen;
+showScreen = function(id, addToStack) {
+  origShow(id, addToStack);
+  if (id === 's-photos') renderPhotoGrid();
+};
+</script>
+</body>
+</html>
