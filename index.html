@@ -1221,9 +1221,10 @@ function fmtDateFR(iso){
 
 
 function reportTitre(r){
-  const t = getTemplate(r.templateId);
-  if(t.id === "custom" && r.titreCustom) return r.titreCustom;
-  return t.titre;
+  return r.typePrestation || r.type || 'BON INTERVENTION PHE';
+}
+function getTemplate(id){
+  return TMPLS.find(function(t){ return t.id === id; }) || TMPLS[TMPLS.length-1];
 }
 
 
@@ -1236,50 +1237,48 @@ function nl2br(str){ return escapeHTML(str).replace(/\n/g,"<br>"); }
 
 
 function echangeurInfoBlock(r){
-  const refrig = r.application === "REFRIGERATION";
-  return `
-  <div class="infoblock nobreak">
-    ${infoRow("Technologie", r.technologie)}
-    ${infoRow("Marque", r.marque)}
-    ${infoRow("Modèle", r.modele)}
-    ${infoRow("Application", refrig ? "REFRIGERATION IND." : "PROCESS")}
-    ${infoRow("N° série", r.numeroSerie)}
-    ${infoRow("Année fabrication", r.anneeFab)}
-    ${infoRow("Fluide primaire", r.fluidePrimaire)}
-    ${infoRow("Fluide secondaire", r.fluideSecondaire)}
-    ${infoRow("Épaisseur bâti fixe (mm)", r.epaisseurBatiFixe)}
-    ${infoRow("Épaisseur bâti mobile (mm)", r.epaisseurBatiMobile)}
-    ${infoRow("Épaisseur bâti intermédiaire (mm)", r.epaisseurBatiIntermediaire)}
-    ${infoRow("Nombre de tirants", r.nombreTirants)}
-    ${infoRow("Taille des tirants", r.tailleTirants)}
-    ${infoRow("Nombre de plaques / cassettes", r.nombrePlaques)}
-    ${infoRow("Qualité des joints", r.qualiteJoints)}
-    ${infoRow("Épaisseur des plaques (mm)", r.epaisseurPlaques)}
-  </div>`;
+  var rows = [
+    ['Marque', r.marque],
+    ['Modele', r.modele],
+    ['N° serie', r.serie],
+    ['Cote de serrage (mm)', r.coteMm],
+    ['Epaisseur bati fixe (mm)', r.batiFixe],
+    ['Epaisseur bati mobile (mm)', r.batiMobile],
+    ['Epaisseur bati intermediaire (mm)', r.batiInter],
+    ['Nombre de tirants', r.nTirants],
+    ['Taille des tirants / ecrous', r.tailleTirants],
+    ['Nombre de plaques / cassettes', r.nbPlaques],
+    ['Type de raccord', r.raccordType],
+    ['Taille de raccord', r.raccordTaille],
+    ['Plaques par section', r.plaquesSection]
+  ].filter(function(row){ return row[1]; });
+  if (!rows.length) return '';
+  return '<div class="infoblock">' + rows.map(function(row){ return infoRow(row[0], row[1]); }).join('') + '</div>';
 }
-
 
 function dtblChecklist(r){
-  if(!r.checklist.length) return `<div class="hint">Aucune prestation renseignée.</div>`;
-  const rows = r.checklist.map(c => `
-    <tr class="nobreak">
-      <td style="width:62%">${escapeHTML(c.label || "—")}</td>
-      <td style="width:14%;text-align:center;font-weight:800;color:${c.status==='OUI'?'#2f8f4e':(c.status==='NON'?'#dc1615':'#9aa7b2')}">${c.status || "—"}</td>
-      <td style="width:24%">${nl2br(c.remark || "")}</td>
-    </tr>`).join("");
-  return `
-  <table class="dtbl">
-    <tr class="nobreak"><th>Prestation</th><th>Statut</th><th>Remarque</th></tr>
-    ${rows}
-  </table>`;
+  var cl = r.checklist || [];
+  if (!cl.length) return '<p style="font-size:12px;color:#888;">Aucune prestation renseignee.</p>';
+  var rows = cl.map(function(c){
+    var statut = c.statut === 'OUI'
+      ? '<span style="color:var(--ok);font-weight:800;">OUI</span>'
+      : c.statut === 'NON'
+      ? '<span style="color:var(--warn);font-weight:800;">NON</span>'
+      : '<span style="color:#999;">—</span>';
+    var bg = c.statut === 'NON' ? 'background:#fbe7e6;' : '';
+    return '<tr style="'+bg+'"><td>'+escapeHTML(c.label)+'</td><td style="text-align:center;width:60px;">'+statut+'</td><td style="width:30%;font-style:italic;color:#5b6b7a;">'+escapeHTML(c.remarque||'')+'</td></tr>';
+  }).join('');
+  return '<table class="dtbl"><thead><tr><th>Prestation</th><th style="text-align:center;">Statut</th><th>Remarque</th></tr></thead><tbody>'+rows+'</tbody></table>';
 }
-
 
 function photoSection(r){
-  if(!r.photos.length) return `<div class="hint">Aucune photo jointe à ce rapport.</div>`;
-  return photoStrip(r.photos);
+  var photos = r.photos || [];
+  if (!photos.length) return '';
+  var items = photos.map(function(p, i){
+    return '<div class="ph"><img src="'+p+'" alt="photo '+(i+1)+'"><div class="n">'+(i+1)+'</div></div>';
+  }).join('');
+  return '<div class="photostrip">'+items+'</div>';
 }
-
 
 function metroSection(m){
   const tbl = (title,key) => {
