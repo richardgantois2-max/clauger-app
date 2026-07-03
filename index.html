@@ -1007,7 +1007,7 @@ function exportPDF(id) {
   parts.push('<div style="text-align:center;font-size:13px;font-weight:700;color:#2a5298;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">'+(r.type||'BON INTERVENTION PHE')+'</div>');
 
   // Date + N° BT
-  parts.push('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">');
+  parts.push('<div style="margin-bottom:14px;">');
   parts.push('<div style="font-size:12px;">Date de rédaction : <strong>'+dateStr+'</strong></div>');
   parts.push('<div style="border:2px solid #cc0000;color:#cc0000;font-weight:700;font-size:12px;padding:4px 14px;">N° BT : '+r.id.substr(-6)+'</div>');
   parts.push('</div>');
