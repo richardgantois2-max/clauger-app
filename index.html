@@ -1052,6 +1052,32 @@ function exportPDF(id) {
 }
 
 
+
+// ===========================================================
+// EDIT REPORT
+// ===========================================================
+function editReport(id) {
+  var r = reports.find(function(x){return x.id===id;});
+  if (!r) return;
+  draft = {
+    id:r.id, tid:r.tid, client:r.client||'', tech:r.tech||'', agence:r.agence||'',
+    date:r.date||'', marque:r.marque||'', modele:r.modele||'', serie:r.serie||'',
+    cote:r.cote||'', app:r.app||'', type:r.type||'',
+    nplaques:r.nplaques||'', batiFixe:r.batiFixe||'', batiMobile:r.batiMobile||'',
+    batiInter:r.batiInter||'', ntirants:r.ntirants||'', ecrous:r.ecrous||'',
+    raccordType:r.raccordType||'', raccordTaille:r.raccordTaille||'',
+    plaquesSection:r.plaquesSection||'',
+    cl: r.cl ? r.cl.map(function(c){return {l:c.l,s:c.s,r:c.r};}) : [],
+    photos:r.photos||[], conclusion:r.conclusion||'', remarques:r.remarques||'',
+    sig_sigTech:r.sig_sigTech||null, sig_sigClient:r.sig_sigClient||null
+  };
+  save();
+  var choice = confirm('Que voulez-vous modifier ?\n\nOK = Informations & equipement\nAnnuler = Checklist & conclusion');
+  if (choice) { fillInfoForm(); showScreen('s-new-info'); }
+  else { renderChecklist(); showScreen('s-checklist'); }
+  showToast('Mode modification');
+}
+
 // ===========================================================
 // DELETE / EXPORT ALL / IMPORT
 // ===========================================================
